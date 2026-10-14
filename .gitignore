@@ -1,0 +1,16 @@
+# Material de referencia del paquete: el desarrollo vive en la raíz del repo
+doc/
+01fuera_contexto
+
+# Entorno local y secretos: el ejemplo sí se versiona
+.env
+.env.*
+!.env.example
+
+# Artefactos de Go
+*.exe
+*.test
+*.out
+
+# Herramientas locales del agente
+.serena/

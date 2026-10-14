@@ -1,0 +1,96 @@
+services:
+  postgres:
+    image: postgres:17.2-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER:?DB_USER es obligatorio}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD es obligatorio}
+      POSTGRES_DB: ${DB_NAME:-eventflow}
+    ports:
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - eventflow_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+  rabbitmq:
+    image: rabbitmq:4.0.5-management-alpine
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    volumes:
+      - eventflow_rabbitmq:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    build:
+      context: .
+      target: migrator
+    environment: &database_environment
+      ENVIRONMENT: dev
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${DB_USER:?DB_USER es obligatorio}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD es obligatorio}
+      DB_NAME: ${DB_NAME:-eventflow}
+      DB_SSL_MODE: disable
+      REQUEST_TIMEOUT: 10s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      target: api
+    environment:
+      <<: *database_environment
+      PORT: "8080"
+      LOG_LEVEL: info
+      LOG_FORMAT: json
+      SHUTDOWN_TIMEOUT: 15s
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "/probe", "-url", "http://127.0.0.1:8080/readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      target: worker
+    environment:
+      <<: *database_environment
+      AMQP_URL: amqp://guest:guest@rabbitmq:5672/
+      OUTBOX_POLL_INTERVAL: 500ms
+      OUTBOX_BATCH_SIZE: "20"
+      PUBLISH_CONFIRM_TIMEOUT: 5s
+      CONSUMER_PREFETCH: "1"
+      LOG_LEVEL: info
+      LOG_FORMAT: json
+      SHUTDOWN_TIMEOUT: 15s
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  eventflow_postgres:
+  eventflow_rabbitmq:

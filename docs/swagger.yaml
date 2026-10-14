@@ -1,0 +1,185 @@
+basePath: /
+definitions:
+  apperrors.Type:
+    enum:
+    - BAD_REQUEST
+    - VALIDATION_ERROR
+    - NOT_FOUND
+    - CONFLICT
+    - PAYLOAD_TOO_LARGE
+    - UNSUPPORTED_MEDIA_TYPE
+    - SERVICE_UNAVAILABLE
+    - INTERNAL_ERROR
+    type: string
+    x-enum-varnames:
+    - BadRequest
+    - ValidationError
+    - NotFound
+    - Conflict
+    - PayloadTooLarge
+    - UnsupportedMediaType
+    - ServiceUnavailable
+    - InternalError
+  handler.createOrderRequest:
+    properties:
+      customer_id:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/handler.orderItemRequest'
+        type: array
+    type: object
+  handler.createOrderResponse:
+    properties:
+      id:
+        type: string
+      status:
+        type: string
+      total_minor:
+        type: integer
+    type: object
+  handler.errorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/httputil.ErrorBody'
+      request_id:
+        type: string
+      timestamp:
+        type: string
+    type: object
+  handler.getOrderResponse:
+    properties:
+      created_at:
+        type: string
+      customer_id:
+        type: string
+      id:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/handler.orderItemResponse'
+        type: array
+      status:
+        type: string
+      total_minor:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  handler.orderItemRequest:
+    properties:
+      product_id:
+        type: string
+      quantity:
+        type: integer
+      unit_price_minor:
+        type: integer
+    type: object
+  handler.orderItemResponse:
+    properties:
+      product_id:
+        type: string
+      quantity:
+        type: integer
+      unit_price_minor:
+        type: integer
+    type: object
+  httputil.ErrorBody:
+    properties:
+      code:
+        type: string
+      details:
+        additionalProperties: {}
+        type: object
+      message:
+        type: string
+      type:
+        $ref: '#/definitions/apperrors.Type'
+    type: object
+info:
+  contact: {}
+  description: API de pedidos EventFlow.
+  title: EventFlow API
+  version: "1.0"
+paths:
+  /orders:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Clave ASCII imprimible sin espacios (1-128)
+        in: header
+        name: Idempotency-Key
+        required: true
+        type: string
+      - description: Pedido
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.createOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.createOrderResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "415":
+          description: Unsupported Media Type
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      summary: Crear pedido
+      tags:
+      - orders
+  /orders/{id}:
+    get:
+      parameters:
+      - description: UUID del pedido
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.getOrderResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      summary: Consultar pedido
+      tags:
+      - orders
+swagger: "2.0"

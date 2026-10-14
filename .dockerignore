@@ -1,0 +1,11 @@
+.git
+.env
+.env.*
+!.env.example
+.serena
+*.exe
+*.out
+*.test
+doc
+AGENTS.md
+EventFlow_guia_implementacion_agentes.md

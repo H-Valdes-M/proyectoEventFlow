@@ -1,0 +1,276 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API de pedidos EventFlow.",
+        "title": "EventFlow API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/",
+    "paths": {
+        "/orders": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Crear pedido",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Clave ASCII imprimible sin espacios (1-128)",
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Pedido",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.createOrderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/handler.createOrderResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.errorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/handler.errorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/handler.errorResponse"
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported Media Type",
+                        "schema": {
+                            "$ref": "#/definitions/handler.errorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/handler.errorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.errorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/orders/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Consultar pedido",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID del pedido",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.getOrderResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.errorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handler.errorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.errorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "apperrors.Type": {
+            "type": "string",
+            "enum": [
+                "BAD_REQUEST",
+                "VALIDATION_ERROR",
+                "NOT_FOUND",
+                "CONFLICT",
+                "PAYLOAD_TOO_LARGE",
+                "UNSUPPORTED_MEDIA_TYPE",
+                "SERVICE_UNAVAILABLE",
+                "INTERNAL_ERROR"
+            ],
+            "x-enum-varnames": [
+                "BadRequest",
+                "ValidationError",
+                "NotFound",
+                "Conflict",
+                "PayloadTooLarge",
+                "UnsupportedMediaType",
+                "ServiceUnavailable",
+                "InternalError"
+            ]
+        },
+        "handler.createOrderRequest": {
+            "type": "object",
+            "properties": {
+                "customer_id": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handler.orderItemRequest"
+                    }
+                }
+            }
+        },
+        "handler.createOrderResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "total_minor": {
+                    "type": "integer"
+                }
+            }
+        },
+        "handler.errorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/httputil.ErrorBody"
+                },
+                "request_id": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.getOrderResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "customer_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handler.orderItemResponse"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "total_minor": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.orderItemRequest": {
+            "type": "object",
+            "properties": {
+                "product_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "unit_price_minor": {
+                    "type": "integer"
+                }
+            }
+        },
+        "handler.orderItemResponse": {
+            "type": "object",
+            "properties": {
+                "product_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "unit_price_minor": {
+                    "type": "integer"
+                }
+            }
+        },
+        "httputil.ErrorBody": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "details": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "message": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/apperrors.Type"
+                }
+            }
+        }
+    }
+}
